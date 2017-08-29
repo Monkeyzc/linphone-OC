@@ -1,0 +1,9 @@
+# This is a comment
+prefix=/Volumes/SSD/workspace_mac/linphone-ios-liblinphone-tester/liblinphone-sdk/x86_64-apple-darwin.ios
+exec_prefix=/Volumes/SSD/workspace_mac/linphone-ios-liblinphone-tester/liblinphone-sdk/x86_64-apple-darwin.ios
+Name:  bctoolbox-tester
+Description: A common set of tester wrappers used by Belledonne Communications's softwares
+Requires.private: bcunit
+Version: 0.6.0
+Libs: -L/Volumes/SSD/workspace_mac/linphone-ios-liblinphone-tester/liblinphone-sdk/x86_64-apple-darwin.ios/lib -lbctoolbox-tester
+Cflags: -I/Volumes/SSD/workspace_mac/linphone-ios-liblinphone-tester/liblinphone-sdk/x86_64-apple-darwin.ios/include

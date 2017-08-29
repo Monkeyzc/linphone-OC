@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import "LinphoneManager.h"
 
 @interface AppDelegate ()
 
@@ -17,6 +18,10 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    
+    LinphoneManager *manager = [[LinphoneManager alloc] init];
+    [manager configureLinphone];
+    
     return YES;
 }
 

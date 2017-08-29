@@ -1,8 +1,8 @@
 //
 //  ViewController.h
-//  linphone-OC
+//  LinPhoneCall
 //
-//  Created by zhaofei on 2017/8/29.
+//  Created by zhaofei on 2017/8/22.
 //  Copyright © 2017年 zhaofei. All rights reserved.
 //
 

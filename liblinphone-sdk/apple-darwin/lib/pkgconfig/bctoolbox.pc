@@ -1,0 +1,10 @@
+# This is a comment
+prefix=/Volumes/SSD/workspace_mac/linphone-ios-liblinphone-tester/liblinphone-sdk/x86_64-apple-darwin.ios
+exec_prefix=/Volumes/SSD/workspace_mac/linphone-ios-liblinphone-tester/liblinphone-sdk/x86_64-apple-darwin.ios
+
+Name:  bctoolbox
+Description: A common set of tools used by Belledonne Communication's softwares
+Version: 0.6.0
+Libs: -L/Volumes/SSD/workspace_mac/linphone-ios-liblinphone-tester/liblinphone-sdk/x86_64-apple-darwin.ios/lib -lbctoolbox
+Libs.private:  /Volumes/SSD/workspace_mac/linphone-ios-liblinphone-tester/liblinphone-sdk/x86_64-apple-darwin.ios/lib/libmbedtls.a /Volumes/SSD/workspace_mac/linphone-ios-liblinphone-tester/liblinphone-sdk/x86_64-apple-darwin.ios/lib/libmbedx509.a /Volumes/SSD/workspace_mac/linphone-ios-liblinphone-tester/liblinphone-sdk/x86_64-apple-darwin.ios/lib/libmbedcrypto.a
+Cflags: -I/Volumes/SSD/workspace_mac/linphone-ios-liblinphone-tester/liblinphone-sdk/x86_64-apple-darwin.ios/include
