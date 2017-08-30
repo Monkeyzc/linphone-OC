@@ -8,8 +8,9 @@
 
 #import "LinphoneManager.h"
 #import <AVFoundation/AVFoundation.h>
-
+#import <CallKit/CallKit.h>
 static LinphoneCore *lc = nil;
+static  CXProvider *provider = nil;
 
 extern void libmsamr_init(MSFactory *factory);
 extern void libmsx264_init(MSFactory *factory);
@@ -17,8 +18,10 @@ extern void libmsopenh264_init(MSFactory *factory);
 extern void libmssilk_init(MSFactory *factory);
 extern void libmswebrtc_init(MSFactory *factory);
 
-@interface LinphoneManager ()
+@interface LinphoneManager () <CXProviderDelegate>
 @property (nonatomic, strong) NSTimer *iterateTimer;
+
+@property(nonatomic, strong) CXProvider *provider;
 @end
 
 @implementation LinphoneManager
@@ -39,8 +42,25 @@ extern void libmswebrtc_init(MSFactory *factory);
     return lc;
 }
 
+- (CXProvider *)getCXProvider {
+    return provider;
+}
+
 - (void)configureLinphone {
     
+    CXProviderConfiguration *config = [[CXProviderConfiguration alloc]
+                                       initWithLocalizedName: @"Fuck you"];
+    config.ringtoneSound = @"notes_of_the_optimistic.caf";
+    config.supportsVideo = FALSE;
+    config.iconTemplateImageData = UIImagePNGRepresentation([UIImage imageNamed:@"callkit_logo"]);
+    
+    NSArray *ar = @[ [NSNumber numberWithInt:(int)CXHandleTypeGeneric] ];
+    NSSet *handleTypes = [[NSSet alloc] initWithArray:ar];
+    [config setSupportedHandleTypes:handleTypes];
+    [config setMaximumCallGroups:2];
+    [config setMaximumCallsPerCallGroup:1];
+    provider = [[CXProvider alloc] initWithConfiguration: config];
+    [provider setDelegate: self queue: nil];
     
     
 //    ms_factory_new_with_voip_and_directories("liblinphone-sdk/apple-darwin/lib/mediastreamer/plugins", NULL);
@@ -194,8 +214,27 @@ void callStateChangedCb(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState 
     
     if (cstate == LinphoneCallIncomingReceived) {
         NSLog(@"收到来电");
-        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle: @"收到来电" message: [NSString stringWithFormat: @"%s", remoteContact] delegate: [LinphoneManager instance] cancelButtonTitle: @"拒绝" otherButtonTitles: @"接收", nil];
-        [alertView show];
+        
+        // Create update to describe the incoming call and caller
+        CXCallUpdate *update = [[CXCallUpdate alloc] init];
+        update.remoteHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value: @"FUCK"];
+        update.supportsDTMF = TRUE;
+        update.supportsHolding = TRUE;
+        update.supportsGrouping = TRUE;
+        update.supportsUngrouping = TRUE;
+        update.hasVideo = FALSE;
+        
+        // Report incoming call to system
+        NSLog(@"CallKit: report new incoming call");
+        
+        [[[LinphoneManager instance] getCXProvider] reportNewIncomingCallWithUUID: [NSUUID UUID]
+                                              update:update
+                                          completion:^(NSError *error) {
+//                                              NSLog(error);
+                                          }];
+        
+//        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle: @"收到来电" message: [NSString stringWithFormat: @"%s", remoteContact] delegate: [LinphoneManager instance] cancelButtonTitle: @"拒绝" otherButtonTitles: @"接收", nil];
+//        [alertView show];
     }
 }
 
@@ -300,6 +339,39 @@ void logCallState(LinphoneCallState cstate) {
 - (void)dealloc {
     [self.iterateTimer invalidate];
     self.iterateTimer = nil;
+}
+
+- (void)providerDidReset:(nonnull CXProvider *)provider {
+    
+}
+
+- (void)provider:(CXProvider *)provider performAnswerCallAction:(CXAnswerCallAction *)action {
+    NSLog(@"performAnswerCallAction");
+    LinphoneCall *call = linphone_core_get_current_call(lc);
+    
+    if (!call) {
+        return ;
+    }
+
+    linphone_call_accept(call);
+}
+
+
+
+- (void)provider:(CXProvider *)provider performStartCallAction:(CXStartCallAction *)action {
+    NSLog(@"performStartCallAction");
+}
+
+- (void)provider:(CXProvider *)provider performEndCallAction:(CXEndCallAction *)action {
+    NSLog(@"performEndCallAction");
+    
+    LinphoneCall *call = linphone_core_get_current_call(lc);
+    
+    if (!call) {
+        return ;
+    }
+    
+    linphone_call_decline(call, LinphoneReasonDeclined);
 }
 
 @end
