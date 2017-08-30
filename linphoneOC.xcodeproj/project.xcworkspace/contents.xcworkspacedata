@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:linphone-OC.xcodeproj">
+      location = "self:/Users/zhaofei/Desktop/linphone/linphone-OC/linphoneOC.xcodeproj">
    </FileRef>
 </Workspace>
