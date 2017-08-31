@@ -12,6 +12,7 @@
 #import <UserNotifications/UserNotifications.h>
 #import <UserNotificationsUI/UserNotificationsUI.h>
 #import <CallKit/CallKit.h>
+#import "IQKeyboardManager.h"
 
 @interface AppDelegate () <PKPushRegistryDelegate, UNUserNotificationCenterDelegate>
 @property PKPushRegistry *voipRegistry;
@@ -29,7 +30,16 @@
     
     [self registerForNotifications:app];
     
+    [[NSNotificationCenter defaultCenter] addObserver: self selector: @selector(handleLinphoneRegisterationStateChangeCbNOotification:) name:@"LinphoneRegisterationStateChangeCbNOotification" object:nil];
+    
     return YES;
+}
+
+#pragma mark --- Init IQKeyboardManager
+- (void)initIQKeyboardManager{
+    [IQKeyboardManager sharedManager].keyboardDistanceFromTextField = 0;
+    [IQKeyboardManager sharedManager].shouldResignOnTouchOutside = YES;
+    [IQKeyboardManager sharedManager].enableAutoToolbar = YES;
 }
 
 
@@ -154,26 +164,14 @@ didInvalidatePushTokenForType:(NSString *)type {
 didReceiveIncomingPushWithPayload:(PKPushPayload *)payload
              forType:(NSString *)type {
     
-    NSLog(@"PushKit : incoming voip notfication: %@", payload.dictionaryPayload);
+    NSLog(@"PushKit: incoming voip notfication: %@", payload.dictionaryPayload);
     
-    // Create update to describe the incoming call and caller
-    CXCallUpdate *update = [[CXCallUpdate alloc] init];
-    update.remoteHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value: @"FUCK"];
-    update.supportsDTMF = TRUE;
-    update.supportsHolding = TRUE;
-    update.supportsGrouping = TRUE;
-    update.supportsUngrouping = TRUE;
-    update.hasVideo = FALSE;
+    // TODO: 判断APP 是否在前台
     
-    // Report incoming call to system
-    NSLog(@"CallKit: report new incoming call");
-    [[[LinphoneManager instance] getCXProvider] reportNewIncomingCallWithUUID: [NSUUID UUID]
-                                                                       update:update
-                                                                   completion:^(NSError *error) {
-                                                                       //                                              NSLog(error);
-                                                                   }];
-    
-    // TODO: awake app
+    LinphoneCore *lc = [[LinphoneManager instance] getLc];
+    linphone_core_unref(lc);
+    lc = nil;
+    [[LinphoneManager instance] configureLinphone];
 }
 
 - (void)pushRegistry:(PKPushRegistry *)registry
@@ -191,19 +189,52 @@ didUpdatePushCredentials:(PKPushCredentials *)credentials
 
 #pragma mark - PushNotification Functions
 
-- (void)application:(UIApplication *)application
-didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
-    NSLog(@"%@ : %@", NSStringFromSelector(_cmd), deviceToken);
-//    [LinphoneManager.instance setPushNotificationToken:deviceToken];
-}
-
-- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
-    NSLog(@"%@ : %@", NSStringFromSelector(_cmd), [error localizedDescription]);
-//    [LinphoneManager.instance setPushNotificationToken:nil];
-}
+//- (void)application:(UIApplication *)application
+//didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+//    NSLog(@"%@ : %@", NSStringFromSelector(_cmd), deviceToken);
+////    [LinphoneManager.instance setPushNotificationToken:deviceToken];
+//}
+//
+//- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
+//    NSLog(@"%@ : %@", NSStringFromSelector(_cmd), [error localizedDescription]);
+////    [LinphoneManager.instance setPushNotificationToken:nil];
+//}
 
 - (void) userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions))completionHandler {
     completionHandler(UNNotificationPresentationOptionAlert | UNNotificationPresentationOptionAlert);
+}
+
+- (void)handleLinphoneRegisterationStateChangeCbNOotification: (NSNotification *)notification {
+    NSLog(@"handleLinphoneRegisterationStateChangeCbNOotification");
+    NSLog(@"%@", notification.object);
+    NSLog(@"handleLinphoneRegisterationStateChangeCbNOotification");
+    
+    NSInteger state = [notification.object integerValue];
+    
+    if (state == 2) {
+        LinphoneCall *call = linphone_core_get_current_call(LC);
+        NSLog(@"handleLinphoneRegisterationStateChangeCbNOotification call: %@", call);
+        if (call) {
+            //  Create update to describe the incoming call and caller
+            CXCallUpdate *update = [[CXCallUpdate alloc] init];
+            update.remoteHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value: @"FUCK"];
+            update.supportsDTMF = TRUE;
+            update.supportsHolding = TRUE;
+            update.supportsGrouping = TRUE;
+            update.supportsUngrouping = TRUE;
+            update.hasVideo = FALSE;
+            
+            // Report incoming call to system
+            NSLog(@"CallKit: report new incoming call");
+            [[[LinphoneManager instance] getCXProvider] reportNewIncomingCallWithUUID: [NSUUID UUID]
+                                                                               update:update
+                                                                           completion:^(NSError *error) {
+                                                                               //                                              NSLog(error);
+                                                                           }];
+        }
+
+    }
+    
 }
 
 @end

@@ -165,15 +165,9 @@ extern void libmswebrtc_init(MSFactory *factory);
 // MARK: linphone 注册状态
 void registerationStateChangeCb(LinphoneCore *lc, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message) {
     NSLog(@"%d", cstate);
+    // 发送通知
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"LinphoneRegisterationStateChangeCbNOotification" object: @(cstate)];
     
-//    typedef enum _LinphoneRegistrationState {
-//        LinphoneRegistrationNone, /**< Initial state for registrations */
-//        LinphoneRegistrationProgress, /**< Registration is in progress */
-//        LinphoneRegistrationOk,    /**< Registration is successful */
-//        LinphoneRegistrationCleared, /**< Unregistration succeeded */
-//        LinphoneRegistrationFailed    /**< Registration failed */
-//    } LinphoneRegistrationState;
-
     switch (cstate) {
         case LinphoneRegistrationNone:
             NSLog(@"还没有注册");

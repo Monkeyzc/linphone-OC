@@ -9,6 +9,7 @@
 #import "ViewController.h"
 #import "VideoViewController.h"
 #import "LinphoneManager.h"
+#import "SendVoipNotificationApi.h"
 
 @interface ViewController ()
 @property (weak, nonatomic) IBOutlet UILabel *registerStateLabel;
@@ -26,7 +27,25 @@
     if (!self.detinationTF.text.length) {
         return ;
     }
-    [[LinphoneManager instance] makeCall: self.detinationTF.text];
+    
+    
+    SendVoipNotificationApi *api = [[SendVoipNotificationApi alloc] init];
+    [api startWithCompletionBlockWithSuccess:^(__kindof YTKBaseRequest *request) {
+        NSLog(@"%@", request.responseJSONObject);
+        
+        NSDictionary *result = request.responseJSONObject;
+        NSString *status = [result objectForKey: @"status"];
+        
+        if ([status isEqualToString: @"success"]) {
+           [[LinphoneManager instance] makeCall: self.detinationTF.text];
+        } else {
+            NSLog(@"错误");
+        }
+        
+    } failure:^(__kindof YTKBaseRequest *request) {
+        
+    }];
+    
 }
 
 - (IBAction)cancelCurrentCall:(UIButton *)sender {

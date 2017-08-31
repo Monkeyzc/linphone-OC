@@ -1,7 +1,11 @@
 
 var express = require('express')
+var bodyParser = require('body-parser')
 var app = express()
 var apn = require('apn')
+
+app.use(bodyParser.urlencoded({extended: true}))
+app.use(bodyParser.json())
 
 var options = {
   cert: './VOIP.pem',
@@ -22,33 +26,35 @@ note.topic = 'com.unicare.linphoneOC.voip'
 
 // 发送 voip 通知
 app.post('/sendVoipNotification', function (req, res) {
-  apnProvider.send(note, 'bd669088a418e1234f0f250025300d43ed81321f42f3960273507a6ebe82a9cf').then(result => {
-    console.log('sent:', result.sent.length)
-    console.log('failed:', result.failed.length)
-    console.log(result.failed)
-    console.log(result)
+  var token = req.body.token
+  console.log(req.body)
+  console.log(`token: ${token}`)
+  if (token) {
+    apnProvider.send(note, token).then(result => {
+      console.log('sent:', result.sent.length)
+      console.log('failed:', result.failed.length)
+      console.log(result.failed)
+      console.log(result)
 
-    if (result.failed.length === 0) {
-      res.send({
-        status: 'success',
-        message: 'sendVoipNotification success'
-      })
-    } else {
-      res.send({
-        status: 'failed',
-        message: 'sendVoipNotification failed'
-      })
-    }
-  })
+      if (result.failed.length === 0) {
+        res.send({
+          status: 'success',
+          message: 'sendVoipNotification success'
+        })
+      } else {
+        res.send({
+          status: 'failed',
+          message: 'sendVoipNotification failed'
+        })
+      }
+    })
+  } else {
+    res.send({
+      status: 'failed',
+      message: 'Please send token'
+    })
+  }
 })
-
-apnProvider.send(note, 'bd669088a418e1234f0f250025300d43ed81321f42f3960273507a6ebe82a9cf').then(result => {
-    console.log('sent:', result.sent.length)
-    console.log('failed:', result.failed.length)
-    console.log(result.failed)
-    console.log(result)
-  })
-
 
 app.listen('3000', function (req, res) {
   console.log('server is listening on 3000 port')
