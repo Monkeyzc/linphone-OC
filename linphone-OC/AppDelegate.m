@@ -11,6 +11,7 @@
 #import <PushKit/PushKit.h>
 #import <UserNotifications/UserNotifications.h>
 #import <UserNotificationsUI/UserNotificationsUI.h>
+#import <CallKit/CallKit.h>
 
 @interface AppDelegate () <PKPushRegistryDelegate, UNUserNotificationCenterDelegate>
 @property PKPushRegistry *voipRegistry;
@@ -154,90 +155,38 @@ didReceiveIncomingPushWithPayload:(PKPushPayload *)payload
              forType:(NSString *)type {
     
     NSLog(@"PushKit : incoming voip notfication: %@", payload.dictionaryPayload);
-    if (floor(NSFoundationVersionNumber) > NSFoundationVersionNumber_iOS_9_x_Max) { // Call category
-        UNNotificationAction *act_ans =
-        [UNNotificationAction actionWithIdentifier:@"Answer"
-                                             title:NSLocalizedString(@"Answer", nil)
-                                           options:UNNotificationActionOptionForeground];
-        UNNotificationAction *act_dec = [UNNotificationAction actionWithIdentifier:@"Decline"
-                                                                             title:NSLocalizedString(@"Decline", nil)
-                                                                           options:UNNotificationActionOptionNone];
-        UNNotificationCategory *cat_call =
-        [UNNotificationCategory categoryWithIdentifier:@"call_cat"
-                                               actions:[NSArray arrayWithObjects:act_ans, act_dec, nil]
-                                     intentIdentifiers:[[NSMutableArray alloc] init]
-                                               options:UNNotificationCategoryOptionCustomDismissAction];
-        // Msg category
-        UNTextInputNotificationAction *act_reply =
-        [UNTextInputNotificationAction actionWithIdentifier:@"Reply"
-                                                      title:NSLocalizedString(@"Reply", nil)
-                                                    options:UNNotificationActionOptionNone];
-        UNNotificationAction *act_seen =
-        [UNNotificationAction actionWithIdentifier:@"Seen"
-                                             title:NSLocalizedString(@"Mark as seen", nil)
-                                           options:UNNotificationActionOptionNone];
-        UNNotificationCategory *cat_msg =
-        [UNNotificationCategory categoryWithIdentifier:@"msg_cat"
-                                               actions:[NSArray arrayWithObjects:act_reply, act_seen, nil]
-                                     intentIdentifiers:[[NSMutableArray alloc] init]
-                                               options:UNNotificationCategoryOptionCustomDismissAction];
-        
-        // Video Request Category
-        UNNotificationAction *act_accept =
-        [UNNotificationAction actionWithIdentifier:@"Accept"
-                                             title:NSLocalizedString(@"Accept", nil)
-                                           options:UNNotificationActionOptionForeground];
-        
-        UNNotificationAction *act_refuse = [UNNotificationAction actionWithIdentifier:@"Cancel"
-                                                                                title:NSLocalizedString(@"Cancel", nil)
-                                                                              options:UNNotificationActionOptionNone];
-        UNNotificationCategory *video_call =
-        [UNNotificationCategory categoryWithIdentifier:@"video_request"
-                                               actions:[NSArray arrayWithObjects:act_accept, act_refuse, nil]
-                                     intentIdentifiers:[[NSMutableArray alloc] init]
-                                               options:UNNotificationCategoryOptionCustomDismissAction];
-        
-        // ZRTP verification category
-        UNNotificationAction *act_confirm = [UNNotificationAction actionWithIdentifier:@"Confirm"
-                                                                                 title:NSLocalizedString(@"Accept", nil)
-                                                                               options:UNNotificationActionOptionNone];
-        
-        UNNotificationAction *act_deny = [UNNotificationAction actionWithIdentifier:@"Deny"
-                                                                              title:NSLocalizedString(@"Deny", nil)
-                                                                            options:UNNotificationActionOptionNone];
-        UNNotificationCategory *cat_zrtp =
-        [UNNotificationCategory categoryWithIdentifier:@"zrtp_request"
-                                               actions:[NSArray arrayWithObjects:act_confirm, act_deny, nil]
-                                     intentIdentifiers:[[NSMutableArray alloc] init]
-                                               options:UNNotificationCategoryOptionCustomDismissAction];
-        
-        [UNUserNotificationCenter currentNotificationCenter].delegate = self;
-        [[UNUserNotificationCenter currentNotificationCenter]
-         requestAuthorizationWithOptions:(UNAuthorizationOptionAlert | UNAuthorizationOptionSound |
-                                          UNAuthorizationOptionBadge)
-         completionHandler:^(BOOL granted, NSError *_Nullable error) {
-             // Enable or disable features based on authorization.
-             if (error) {
-                 NSLog(error.description);
-             }
-         }];
-        NSSet *categories = [NSSet setWithObjects:cat_call, cat_msg, video_call, cat_zrtp, nil];
-        [[UNUserNotificationCenter currentNotificationCenter] setNotificationCategories:categories];
-    }
-//    [LinphoneManager.instance setupNetworkReachabilityCallback];
-    dispatch_async(dispatch_get_main_queue(), ^{
-//        [self processRemoteNotification:payload.dictionaryPayload];
-    });
+    
+    // Create update to describe the incoming call and caller
+    CXCallUpdate *update = [[CXCallUpdate alloc] init];
+    update.remoteHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value: @"FUCK"];
+    update.supportsDTMF = TRUE;
+    update.supportsHolding = TRUE;
+    update.supportsGrouping = TRUE;
+    update.supportsUngrouping = TRUE;
+    update.hasVideo = FALSE;
+    
+    // Report incoming call to system
+    NSLog(@"CallKit: report new incoming call");
+    [[[LinphoneManager instance] getCXProvider] reportNewIncomingCallWithUUID: [NSUUID UUID]
+                                                                       update:update
+                                                                   completion:^(NSError *error) {
+                                                                       //                                              NSLog(error);
+                                                                   }];
+    
+    // TODO: awake app
 }
 
 - (void)pushRegistry:(PKPushRegistry *)registry
 didUpdatePushCredentials:(PKPushCredentials *)credentials
              forType:(PKPushType)type {
-    NSLog(@"PushKit credentials updated");
-    NSLog(@"voip token: %@", (credentials.token));
-    dispatch_async(dispatch_get_main_queue(), ^{
-//        [LinphoneManager.instance setPushNotificationToken:credentials.token];
-    });
+    
+    NSString *str = [NSString stringWithFormat:@"%@",credentials.token];
+    str = [[[str stringByReplacingOccurrencesOfString:@"<" withString:@""]
+                  stringByReplacingOccurrencesOfString:@">" withString:@""] stringByReplacingOccurrencesOfString:@" " withString:@""];
+    NSLog(@"voip token: %@", str);
+    
+    // TODO: send voip notification device token to server
+
 }
 
 #pragma mark - PushNotification Functions
@@ -253,5 +202,8 @@ didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
 //    [LinphoneManager.instance setPushNotificationToken:nil];
 }
 
+- (void) userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions))completionHandler {
+    completionHandler(UNNotificationPresentationOptionAlert | UNNotificationPresentationOptionAlert);
+}
 
 @end

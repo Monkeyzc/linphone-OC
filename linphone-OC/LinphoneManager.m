@@ -8,7 +8,7 @@
 
 #import "LinphoneManager.h"
 #import <AVFoundation/AVFoundation.h>
-#import <CallKit/CallKit.h>
+
 static LinphoneCore *lc = nil;
 static  CXProvider *provider = nil;
 

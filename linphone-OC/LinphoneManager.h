@@ -16,6 +16,8 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #include "linphone/linphonecore.h"
+#import <CallKit/CallKit.h>
+
 @interface LinphoneManager : NSObject <UIAlertViewDelegate>
 
 + (instancetype)instance;
@@ -25,5 +27,6 @@
 
 - (void)makeCall: (NSString *)username;
 - (void)cancelCurrentCall;
+- (CXProvider *)getCXProvider;
 
 @end
