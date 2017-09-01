@@ -206,6 +206,9 @@ void callStateChangedCb(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState 
     NSLog(@"message: %s", message);
     NSLog(@"=======");
     
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"LinphoneCallStateChangeCbNotification" object: @(cstate)];
+    
     if (cstate == LinphoneCallIncomingReceived) {
         NSLog(@"收到来电");
         
@@ -221,11 +224,11 @@ void callStateChangedCb(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState 
         // Report incoming call to system
         NSLog(@"CallKit: report new incoming call");
         
-        [[[LinphoneManager instance] getCXProvider] reportNewIncomingCallWithUUID: [NSUUID UUID]
-                                              update:update
-                                          completion:^(NSError *error) {
-//                                              NSLog(error);
-                                          }];
+//        [[[LinphoneManager instance] getCXProvider] reportNewIncomingCallWithUUID: [NSUUID UUID]
+//                                              update:update
+//                                          completion:^(NSError *error) {
+////                                              NSLog(error);
+//                                          }];
         
 //        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle: @"收到来电" message: [NSString stringWithFormat: @"%s", remoteContact] delegate: [LinphoneManager instance] cancelButtonTitle: @"拒绝" otherButtonTitles: @"接收", nil];
 //        [alertView show];
@@ -366,6 +369,8 @@ void logCallState(LinphoneCallState cstate) {
     }
     
     linphone_call_decline(call, LinphoneReasonDeclined);
+    
+    [provider invalidate];
 }
 
 @end
